@@ -6,19 +6,59 @@
 import sys
 from PyQt4 import QtGui, QtCore
 
-WordDelim = {'space','tab'}
-LineDelim = {'newline'}
+class Delimiter:
+    def __init__(self, keycode, name):
+        self.keycode = keycode
+        self.name = name
+    def getKeycode(self):
+        return self.keycode
+    def getName(self):
+        return self.name
+class Cursor:
+    def __init__(self):
+        self.position = -1
+        self.left = -1
+        self.right = -1
+    def setPosition(self, pos):
+        self.position = pos
+    def setToLeft(self, char):
+        self.left = char
+    def setToRight(self, char):
+        self.right = char
+    def getPosition(self):
+        return self.position
+    def getLeft(self):
+        return self.left
+    def getRight(self):
+        return self.right
 
-keyMapper  = {0x20:'space',0x01000001:'tab',0x01000004:'newline',0x01000012:'left',0x01000014:'right',0x01000013:'up',0x01000015:'up'}
+class KeyEvent:
+    def __init__(self,key):
+        self.key = key
+    def print(self):
+        if self.key in Delim:
+            
+        print(self.key)
 
-BrainiacStates = ['Linear','LR']
-BrainiacCursorEvents = ['MoveLeft','MoveRight','MoveUp','MoveDown']
-BrainiacKeyEvents = ['TypeWordDelim','TypeLineDelim','TypeAbc']
-
-
+class CursorEvent:
+    def __init__(self,key,pos,charLeft,charRight):
+        if key == 0x01000012:
+            self.direction = "left"
+        elif key == 0x01000014:
+            self.direction = "right"
+        elif key == 0x01000013:
+            self.direction = "up"
+        elif key == 0x01000015:
+            self.direction = "down"
+        self.position = pos
+        self.left = charLeft
+        self.right = charRight
+    def print(self):
+        print("move : " + self.direction + " where left: " + self.left + ", right: " + self.right) 
 
 class Brainiac:
-    state = BrainiacStates[0]
+    def __init__(self):
+        self.cursor = Cursor()
     def checkState(self):
         pass
     def changeState(self):
@@ -27,13 +67,10 @@ class Brainiac:
         pass
     def LRMethod(self):
         pass
-    def processEvent(self,keycode):
-        self.mapKeyCodeToEvent(keycode)
-        
-        
-    def mapKeyCodeToEvent(self,keycode):
-        # keycodes are used from PyQt4
-        return keyMapper[keycode]
+    def processKeyEvent(self,event):
+        event.print()
+    def processCursorEvent(self,event):
+        event.print()
 
 class SmartTextbox(QtGui.QTextEdit):
     def __init__(self):
@@ -43,10 +80,14 @@ class SmartTextbox(QtGui.QTextEdit):
         self.cursor = self.textCursor()
     
     def keyPressEvent(self , event):
-        self.brain.processEvent(event.key())
+        if event.key() in Chars:
+            kevent = KeyEvent(event.key())
+            self.brain.processKeyEvent(kevent)
+        if event.key() in CursorKeys:
+            pos = self.textCursor().position()
+            cevent = CursorEvent(event.key(),pos,self.doc.characterAt(pos-2),self.doc.characterAt(pos-1))
+            self.brain.processCursorEvent(cevent)
         QtGui.QTextEdit.keyPressEvent(self, event)
-        pos = self.textCursor().position()
-        print(str(pos) +" : "+ self.doc.characterAt(pos-1) +", "+ self.doc.characterAt(pos))
 
 class Window(QtGui.QMainWindow):
     def __init__(self):
@@ -62,7 +103,7 @@ class Window(QtGui.QMainWindow):
     
 def main():
     app = QtGui.QApplication(sys.argv)
-    
+    print(Chars)
     ex = Window()
     sys.exit(app.exec_())
 
