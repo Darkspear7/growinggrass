@@ -6,51 +6,47 @@
 import sys
 from PyQt4 import QtGui, QtCore
 
-WordDelim = ['Space','Tab']
-LineDelim = ['NewLine']
+WordDelim = {'space','tab'}
+LineDelim = {'newline'}
+
+keyMapper  = {0x20:'space',0x01000001:'tab',0x01000004:'newline',0x01000012:'left',0x01000014:'right',0x01000013:'up',0x01000015:'up'}
 
 BrainiacStates = ['Linear','LR']
 BrainiacCursorEvents = ['MoveLeft','MoveRight','MoveUp','MoveDown']
 BrainiacKeyEvents = ['TypeWordDelim','TypeLineDelim','TypeAbc']
 
+
+
 class Brainiac:
-    state = BrainiacStates['Linear'];
-    def checkState():
+    state = BrainiacStates[0]
+    def checkState(self):
         pass
-    def changeState():
+    def changeState(self):
         pass
-    def LinearMethod():
+    def LinearMethod(self):
         pass
-    def LRMethod():
+    def LRMethod(self):
         pass
-    def processEvent():
-        pass
-    def mapKeyCodeToEvent(keycode):
+    def processEvent(self,keycode):
+        self.mapKeyCodeToEvent(keycode)
+        
+        
+    def mapKeyCodeToEvent(self,keycode):
         # keycodes are used from PyQt4
-        if keycode == 0x01000012:
-            return BrainiacCursorEvents.['MoveLeft']
-        elif keycode == 0x01000014:
-            return BrainiacCursorEvents['MoveRight']
-        elif keycode == 0x01000013:
-            return BrainiacCursorEvents['MoveUp']
-        elif keycode == 0x01000015:
-            return BrainiacCursorEvents['MoveDown']
-        elif keycode == 0x01000004:
-            return BrainiacKeyEvents['TypeLineDelim']
-        elif keycode == 0x01000001:
-            return == BrainiacKeyEvents['TypeWordDelim']
-        elif keycode == 0x20:
-            return == BrainiacKeyEvents['TypeWordDelim']
-        elif keycode >= 0x21 and keycode <= 0x0ff:
-            return == keycode
+        return keyMapper[keycode]
 
 class SmartTextbox(QtGui.QTextEdit):
     def __init__(self):
+        self.brain = Brainiac()
         super(SmartTextbox, self).__init__()
+        self.doc = self.document()
+        self.cursor = self.textCursor()
     
     def keyPressEvent(self , event):
-        print(str(event.key())+" : "+event.text())
+        self.brain.processEvent(event.key())
         QtGui.QTextEdit.keyPressEvent(self, event)
+        pos = self.textCursor().position()
+        print(str(pos) +" : "+ self.doc.characterAt(pos-1) +", "+ self.doc.characterAt(pos))
 
 class Window(QtGui.QMainWindow):
     def __init__(self):
@@ -65,8 +61,8 @@ class Window(QtGui.QMainWindow):
         self.show()
     
 def main():
-    
     app = QtGui.QApplication(sys.argv)
+    
     ex = Window()
     sys.exit(app.exec_())
 
