@@ -14,6 +14,8 @@ class Delimiter:
         return self.keycode
     def getName(self):
         return self.name
+    def print(self):
+        print("Delimiter : " + self.name + " ,keycode : " + str(self.keycode))
 class Cursor:
     def __init__(self):
         self.position = -1
@@ -32,33 +34,13 @@ class Cursor:
     def getRight(self):
         return self.right
 
-class KeyEvent:
-    def __init__(self,key):
-        self.key = key
-    def print(self):
-        if self.key in Delim:
-            
-        print(self.key)
-
-class CursorEvent:
-    def __init__(self,key,pos,charLeft,charRight):
-        if key == 0x01000012:
-            self.direction = "left"
-        elif key == 0x01000014:
-            self.direction = "right"
-        elif key == 0x01000013:
-            self.direction = "up"
-        elif key == 0x01000015:
-            self.direction = "down"
-        self.position = pos
-        self.left = charLeft
-        self.right = charRight
-    def print(self):
-        print("move : " + self.direction + " where left: " + self.left + ", right: " + self.right) 
-
 class Brainiac:
     def __init__(self):
         self.cursor = Cursor()
+        self.delimiters = []
+        self.delimiters.append(Delimiter(0x20,"space"))
+        self.delimiters.append(Delimiter(0x01000001,"tab"))
+
     def checkState(self):
         pass
     def changeState(self):
@@ -67,26 +49,20 @@ class Brainiac:
         pass
     def LRMethod(self):
         pass
-    def processKeyEvent(self,event):
-        event.print()
-    def processCursorEvent(self,event):
-        event.print()
+    def print(self):
+        print(self.delimiters)
 
 class SmartTextbox(QtGui.QTextEdit):
     def __init__(self):
         self.brain = Brainiac()
+        for x in self.brain.delimiters:
+            x.print()
         super(SmartTextbox, self).__init__()
         self.doc = self.document()
         self.cursor = self.textCursor()
     
     def keyPressEvent(self , event):
-        if event.key() in Chars:
-            kevent = KeyEvent(event.key())
-            self.brain.processKeyEvent(kevent)
-        if event.key() in CursorKeys:
-            pos = self.textCursor().position()
-            cevent = CursorEvent(event.key(),pos,self.doc.characterAt(pos-2),self.doc.characterAt(pos-1))
-            self.brain.processCursorEvent(cevent)
+        
         QtGui.QTextEdit.keyPressEvent(self, event)
 
 class Window(QtGui.QMainWindow):
@@ -103,7 +79,6 @@ class Window(QtGui.QMainWindow):
     
 def main():
     app = QtGui.QApplication(sys.argv)
-    print(Chars)
     ex = Window()
     sys.exit(app.exec_())
 
