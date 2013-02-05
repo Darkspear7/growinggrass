@@ -11,22 +11,73 @@ LineDelimiters = {0x01000004}
 CursorMoveKeys = {0x01000012,0x01000013,0x01000014,0x01000015}
 
 class Parser:
-    state = 'linear'
+    def __init__(self):
+        self.state = 'linear'
+        self.actions = []
     def checkState(self, event):
-        pass
-    def processEvent(self, event):
+        if not event.hasAttribute('left') and not event.hasAttribute('right'):
+            raise Exception("check state failed")
+        isLchar = not event.getAttribute('left') in {' ','\t','\u2029'}
+        isRchar = not event.getAttribute('right') in {' ','\t','\u2029'}
+        if (not isLchar) and (not isRchar):
+            self.state = 'linear'
+        elif isLchar and isRchar:
+            self.state = 'lrm'
+        elif isLchar and (not isRchar):
+            self.state = 'lre'
+        elif  (not isLchar) and isRchar:
+            self.state = 'lrs'
+    def addEvent(self, event):
         if event.isKeyEvent():
-            a = 1
-            #print("got key event")
-            #print(event.getAttrib('left')+" : "+event.getAttrib('right'))
+            if isCharWordDelimiter(event.getAttribute('char')):
+                self.__addEvent('kdw')
+            elif isCharLineDelimiter(event.getAttribute('char')):
+                self.__addEvent('kdl')
+            else:
+                self.__addEvent('kc')
         else:
-            a = 1
-            #print("got cursor event")
-            #print(event.getAttrib('left')+" : "+event.getAttrib('right'))
-    def __useLinearMethod(self, event):
-        pass
-    def __useLRMethod(self, event):
-        pass
+            self.__addEvent('cm')
+    def process(self):
+        print(self.state)
+        print(self.actions)
+        case1 = ['kc','cm'] == self.actions
+        case2 = ['kc','kdw'] == self.actions
+        case3 = ['kc','kdl'] == self.actions
+        if self.state == 'linear':
+            if case1 or case2 or case3: self.__useLinearMethod()
+        elif self.state == 'lrs':
+            if case1: self.__useLRMethod(1,'s')
+            if case2: self.__useLRMethod(2,'s')
+            if case3: self.__useLRMethod(3,'s')
+        elif self.state == 'lrm':            
+            if case1: self.__useLRMethod(1,'m')
+            if case2: self.__useLRMethod(2,'m')
+            if case3: self.__useLRMethod(3,'m')
+            if ['cm','kdw'] == self.actions: self.__useLRMethod(4,'m')
+            if ['cm','kdl'] == self.actions: self.__useLRMethod(4,'m')
+        elif self.state == 'lre':
+            if case1: self.__useLRMethod(1,'e')
+            if case2: self.__useLRMethod(2,'e')
+            if case3: self.__useLRMethod(3,'e')
+    def __useLinearMethod(self):
+        print('using linear for emit')
+        self.actions = []
+    def __useLRMethod(self, case, subParser):
+        if case == 1:
+            print('LR emit change word')
+        elif subParser == 's':
+            print('LRS emit word')
+        elif subParser == 'm':
+            print('LRM emit change word, change word')
+        elif subParser == 'e':
+            print('LR emit change word')
+        self.actions = []
+    def __addEvent(self, chars):
+        if len(self.actions) > 0:
+            if not self.actions[-1]==chars:
+                self.actions.append(chars)
+        else:
+            self.actions.append(chars)
 
 class SmartTextbox(QtGui.QTextEdit):
     def __init__(self):
@@ -36,18 +87,20 @@ class SmartTextbox(QtGui.QTextEdit):
     def keyPressEvent(self , event):
         QtGui.QTextEdit.keyPressEvent(self, event)
         cursor = self.textCursor()
-        print(cursor.position())
         if event.key() in CursorMoveKeys:
             toProc = Event('cursor')
-            toProc.addAttrib('left', self.doc.characterAt(cursor.position()-1))
-            toProc.addAttrib('right',self.doc.characterAt(cursor.position()))
+            toProc.addAttribute('left', self.doc.characterAt(cursor.position()-1))
+            toProc.addAttribute('right',self.doc.characterAt(cursor.position()))
         else:
             toProc = Event('key')
-            toProc.addAttrib('left', self.doc.characterAt(cursor.position()-1))
-            toProc.addAttrib('right',self.doc.characterAt(cursor.position()))
+            toProc.addAttribute('char', event.text())
+            toProc.addAttribute('left', self.doc.characterAt(cursor.position()-1))
+            toProc.addAttribute('right',self.doc.characterAt(cursor.position()))
+            
         
+        self.parser.addEvent(toProc)
+        self.parser.process()
         self.parser.checkState(toProc)
-        self.parser.processEvent(toProc)
 
 class Window(QtGui.QMainWindow):
     def __init__(self):
