@@ -1,6 +1,5 @@
 class Parser:
-    def __init__(self):
-        self.store = ""
+    store = ""
 
     def updateChar(self, char):
         if char in self.delimiters:
@@ -25,14 +24,10 @@ class LinearParser(Parser):
 class LRParser(Parser):
     delimiters = []
 
-class LRSParser(LRParser):
-    pass
+class LRSParser(LRParser): pass
+class LRMParser(LRParser): pass
+class LREParser(LRParser): pass
 
-class LRMParser(LRParser):
-    pass
-
-class LREParser(LRParser):
-    pass
 
 class StateParser:
     parser = None
@@ -45,26 +40,17 @@ class StateParser:
         isAlfanumeric = lambda x: x in map(lambda x: chr(x), range(33,126))
 
         # linear parser
-        if isNonAlfanumeric(left) and isNonAlfanumeric(right):
-            nextParser = LinearParser()
-
+        if isNonAlfanumeric(left) and isNonAlfanumeric(right):  nextParser = LinearParser()
         # lr parsers
         if char is None:
-            if isAlfanumeric(left) and isAlfanumeric(right):
-                nextParser = LRMParser()
-            if isNonAlfanumeric(left) and isAlfanumeric(right):
-                nextParser = LRSParser()
-            if isAlfanumeric(left) and isNonAlfanumeric(right):
-                nextParser = LREParser()
+            if isAlfanumeric(left) and isAlfanumeric(right):    nextParser = LRMParser()
+            if isNonAlfanumeric(left) and isAlfanumeric(right): nextParser = LRSParser()
+            if isAlfanumeric(left) and isNonAlfanumeric(right): nextParser = LREParser()
         
 
-        if nextParser is None:
-            if char is not None and self.parser is not None:
-                self.parser.updateChar(char)
-        else:
+        if nextParser is not None:
             print "PARSER {}".format(nextParser.__class__)
-            if self.parser is not None:
-                self.parser.terminate()
+            if self.parser is not None: self.parser.terminate()
             self.parser = nextParser
-            if char is not None:
-                self.parser.updateChar(char)
+        
+        if char is not None: self.parser.updateChar(char)
