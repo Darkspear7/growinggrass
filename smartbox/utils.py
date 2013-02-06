@@ -5,18 +5,9 @@ from collections import namedtuple
 
 EventAttributes = {'left': str, 'right': str}
 KeyEventAttributes = {'delim': str,'char': str}
-CursorEventAttributes = {'direction': int}
-
-WordDelimiters = {' ','\t'}
-LineDelimiters = {'\n','\r'}
-
-def isCharWordDelimiter(char):
-    return char in WordDelimiters
-def isCharLineDelimiter(char):
-    return char in LineDelimiters
+CursorEventAttributes = {'dir': str}
 
 class Event:
-    """i think this is a documentation string, i`m not sure"""
     def __init__(self, eventType):
         if eventType == "key":
             self.__type = 1
@@ -29,22 +20,35 @@ class Event:
     def isCursorEvent(self):
         return self.__type == 2
     def addAttribute(self,name,value):
+        valid = self.__addAttr(name, value)
         if self.isKeyEvent():
-            testType = (name in KeyEventAttributes)
-            testType = (testType and isinstance(value,KeyEventAttributes[name]))
+            valid = valid or self.__addKattr(name, value)
         elif self.isCursorEvent():
-            testType = (name in CursorEventAttributes)
-            testType = (testType and isinstance(value,CursorEventAttributes[name]))
-        
-        testType = (testType or  (name in EventAttributes and isinstance(value,EventAttributes[name])))
-        if testType:
-            setattr(self,name,value)
-        else:
-            print(name)
-            print(KeyEventAttributes)
-            print(name in KeyEventAttributes)
+            valid = valid or self.__addCattr(name, value)
+        if not valid:
             raise Exception("Invalid attribute for event type")
     def getAttribute(self,name):
         return getattr(self, name, None)
     def hasAttribute(self,name):
         return hasattr(self,name)
+    def __addKattr(self, name, value):
+        if name in KeyEventAttributes:
+            if isinstance(value,KeyEventAttributes[name]):
+                setattr(self, name, value)
+                return True
+        return False
+    def __addCattr(self, name, value):
+        if name in CursorEventAttributes:
+            if isinstance(value,CursorEventAttributes[name]):
+                setattr(self, name, value)
+                return True
+        return False
+    def __addAttr(self, name, value):
+        if name in EventAttributes:
+            if isinstance(value,EventAttributes[name]):
+                setattr(self, name, value)
+                return True
+        return False
+
+def readLeft(text, pos, delimiters):
+    pass
