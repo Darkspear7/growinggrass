@@ -5,9 +5,6 @@ import sys
 from PyQt4 import QtGui, QtCore
 import StateParser
 
-WordDelimiters = {0x020,0x01000001}
-LineDelimiters = {0x01000004}
-
 CursorMoveKeys = {0x01000012,0x01000013,0x01000014,0x01000015}
 
 class SmartTextbox(QtGui.QTextEdit):
@@ -20,10 +17,8 @@ class SmartTextbox(QtGui.QTextEdit):
         # TODO make this unicode aware
         def characterAtOrNone(position):
             character = self.document().characterAt(position)
-            print character
-            print character.isMark()
             # TODO find out what that \x00 character is, and why it's harrasing me
-            return None if (character.isNull() or character is u'\x00') else character.toAscii()
+            return None if (character.isNull() or character.toAscii() is '\x00') else character.toAscii()
 
         '''
         For the cursor's left character the ternary is in place because we receive the
@@ -32,6 +27,8 @@ class SmartTextbox(QtGui.QTextEdit):
         '''
         cursor = (characterAtOrNone(cposition - 1 if character is None else cposition - 2),
                   characterAtOrNone(cposition))
+
+        self.parser.updateParser(cursor, character)
         
 
 class Window(QtGui.QMainWindow):

@@ -35,38 +35,26 @@ class LREParser(LRParser):
     pass
 
 class StateParser:
-    def __init__(self):
-        self.position = None
-        self.parser   = None
+    parser = None
 
-
-    def updateParser(self, cursor, char, position, key_event):
-        if self.position is None:
-            self.position = position
-        else:
-            pass
-        
-        left, right = cursor
-        back  = left[0] if len(left) > 0 else None
-        front = right[0] if len(right) > 0 else None
-
-        nonAlphabet = [None, "", " ", "\n", "\t"]
-        alphablet   = map(lambda x: chr(x), range(33,126))
+    def updateParser(self, cursor, char):
+        nextParser       = None
+        left, right      = cursor
+        isNonAlfanumeric = lambda x: x in [None, "", " ", "\n", "\t"]
+        # TODO again, make the darn thing unicode aware
+        isAlfanumeric = lambda x: x in map(lambda x: chr(x), range(33,126))
 
         # linear parser
-        leftP, rightP = ((lambda x: back in x)(nonAlphabet), (lambda x: front in x)(nonAlphabet))
-        nextParser = None
-        if leftP and rightP:
+        if isNonAlfanumeric(left) and isNonAlfanumeric(right):
             nextParser = LinearParser()
-
 
         # lr parsers
         if char is None:
-            if back in alphablet and front in alphablet:
+            if isAlfanumeric(left) and isAlfanumeric(right):
                 nextParser = LRMParser()
-            if back in nonAlphabet and front in alphablet:
+            if isNonAlfanumeric(left) and isAlfanumeric(right):
                 nextParser = LRSParser()
-            if back in alphablet and front in nonAlphabet:
+            if isAlfanumeric(left) and isNonAlfanumeric(right):
                 nextParser = LREParser()
         
 
@@ -74,18 +62,9 @@ class StateParser:
             if char is not None and self.parser is not None:
                 self.parser.updateChar(char)
         else:
-            #print "PARSER {}".format(nextParser.__class__)
+            print "PARSER {}".format(nextParser.__class__)
             if self.parser is not None:
                 self.parser.terminate()
             self.parser = nextParser
             if char is not None:
                 self.parser.updateChar(char)
-
-
-    def notify(self, key_event):
-        e_object = key_event.GetEventObject()
-        cursor_position = e_object.GetInsertionPoint()
-        cursor = (e_object.GetRange(cursor_position - 1, cursor_position), e_object.GetRange(cursor_position, cursor_position + 1))
-        char = chr(key_event.GetRawKeyCode()) if key_event.GetRawKeyCode() in range(256) else None
-        self.updateParser(cursor, char, cursor_position, key_event)
-        key_event.Skip()
