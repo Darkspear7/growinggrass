@@ -3,6 +3,7 @@
 
 import sys
 from parser import *
+from smarty import *
 from PyQt4 import QtGui, QtCore
 
 WordDelimiters = {0x020,0x01000001}
@@ -15,27 +16,18 @@ class SmartTextbox(QtGui.QTextEdit):
     def __init__(self):
         super(SmartTextbox,self).__init__()
         self.doc = self.document()
-        self.parser = Parser()
+        self.sstream = QtStringBuffer(self.textCursor())
+        self.nav = NavigationModule(self.sstream)
     def keyPressEvent(self , event):
-        QtGui.QTextEdit.keyPressEvent(self, event)
-        cursor = self.textCursor()
-        pos = cursor.position()
         if event.key() in CursorMoveKeys:
-            toProc = Event('cursor')
-            if event.key() == 0x01000012: toProc.addAttribute('dir','l')
-            elif event.key() == 0x01000013: toProc.addAttribute('dir','u')
-            elif event.key() == 0x01000014: toProc.addAttribute('dir','r')
-            elif event.key() == 0x01000015: toProc.addAttribute('dir','d')
+            if event.key() == 0x01000012:
+                self.nav.move('left')
+            elif event.key() == 0x01000014:
+                self.nav.move('right')
         else:
-            toProc = Event('key')
-            toProc.addAttribute('char', event.text())
-        
-        #a = self.doc.characterAt(pos-1)
-        #print(a.encode('ascii'))
-        toProc.addAttribute('left', self.doc.characterAt(pos-1))
-        toProc.addAttribute('right',self.doc.characterAt(pos))    
-        self.parser.addEvent(toProc)
-        self.parser.process(self.doc.toPlainText(), pos)
+            self.nav.move('right', event.text())
+        QtGui.QTextEdit.keyPressEvent(self, event)
+        #print(self.doc.characterAt(1).encode('ascii'))
 
 class Window(QtGui.QMainWindow):
     def __init__(self):
